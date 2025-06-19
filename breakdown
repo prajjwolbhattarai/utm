@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UTM Link Breakdown Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+    label, input, textarea { display: block; width: 100%; margin-bottom: 1rem; padding: 0.5rem; }
+    .result { background: #f4f4f4; padding: 1rem; border-radius: 6px; word-break: break-word; }
+    button { padding: 0.7rem; font-weight: bold; cursor: pointer; background: #000; color: #fff; border: none; }
+    .param { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+  <h1>UTM Link Breakdown</h1>
+
+  <label for="utmUrl">Paste UTM URL:</label>
+  <input type="text" id="utmUrl" placeholder="https://example.com/page?utm_source=facebook&utm_medium=paid_social..." />
+
+  <button onclick="breakdownUTM()">Break Down</button>
+
+  <div class="result" id="output"></div>
+
+  <script>
+    function breakdownUTM() {
+      const url = document.getElementById('utmUrl').value.trim();
+      if (!url.includes('?')) {
+        document.getElementById('output').innerText = 'No parameters found in the link.';
+        return;
+      }
+
+      const paramString = url.split('?')[1].split('#')[0];
+      const params = new URLSearchParams(paramString);
+      const output = [];
+
+      for (const [key, value] of params.entries()) {
+        output.push(`<div class="param"><strong>${key}</strong>: ${decodeURIComponent(value)}</div>`);
+      }
+
+      document.getElementById('output').innerHTML = output.join('');
+    }
+  </script>
+</body>
+</html>

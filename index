@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>NAO UTM Builder</title>
+
+  <style>
+
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+
+    label, select, input, textarea { display: block; width: 100%; margin-bottom: 1rem; padding: 0.5rem; }
+
+    .output { background: #f4f4f4; padding: 1rem; border-radius: 6px; word-break: break-all; }
+
+    button { padding: 0.7rem; font-weight: bold; cursor: pointer; background: #000; color: #fff; border: none; }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1>NAO UTM URL Generator</h1>
+
+
+  <label>Base URL</label>
+
+  <input type="text" id="baseUrl" placeholder="https://www.investnao.com/your-page" />
+
+
+  <label>Platform (utm_source)</label>
+
+  <select id="utmSource">
+
+    <option value="facebook">facebook</option>
+
+    <option value="instagram">instagram</option>
+
+    <option value="referral_user">referral_user</option>
+
+    <option value="email">email</option>
+
+    <option value="podcast_finanzfluss">podcast_finanzfluss</option>
+
+    <option value="google">google</option>
+
+    <option value="linkedin">linkedin</option>
+
+    <option value="spotify">spotify</option>
+
+    <option value="apple_ads">apple_ads</option>
+
+    <option value="reddit">reddit</option>
+
+    <option value="youtube">youtube</option>
+
+    <option value="creator_lisa">creator_lisa</option>
+
+    <option value="webinar">webinar</option>
+
+    <option value="volksbank_lahr">volksbank_lahr</option>
+
+    <option value="tv">tv</option>
+
+    <option value="mydealz">mydealz</option>
+
+  </select>
+
+
+  <label>Traffic Type (utm_medium)</label>
+
+  <select id="utmMedium">
+
+    <option value="paid_social">paid_social</option>
+
+    <option value="search">search</option>
+
+    <option value="display">display</option>
+
+    <option value="newsletter">newsletter</option>
+
+    <option value="audio_ad">audio_ad</option>
+
+    <option value="app_store_search">app_store_search</option>
+
+    <option value="influencer_collab">influencer_collab</option>
+
+    <option value="event_promotion">event_promotion</option>
+
+    <option value="partner_bank">partner_bank</option>
+
+    <option value="offline_ad">offline_ad</option>
+
+    <option value="deal_community">deal_community</option>
+
+  </select>
+
+
+  <label>Campaign Name (utm_campaign)</label>
+
+  <input type="text" id="utmCampaign" placeholder="de_ebook_leads_q3" />
+
+
+  <label>Creative Version or Test (utm_content)</label>
+
+  <input type="text" id="utmContent" placeholder="test_hookline_b_video_v3" />
+
+
+  <label>Search Term or Segment (utm_term, optional)</label>
+
+  <input type="text" id="utmTerm" placeholder="investment_guide" />
+
+
+  <label>Ad System ID (utm_id, optional)</label>
+
+  <input type="text" id="utmId" placeholder="optional platform ad ID" />
+
+
+  <label>Language (utm_lang, optional)</label>
+
+  <input type="text" id="utmLang" placeholder="de / en" />
+
+
+  <label>Audience (utm_audience, optional)</label>
+
+  <input type="text" id="utmAudience" placeholder="saver_40plus" />
+
+
+  <button onclick="generateUTM()">Generate UTM URL</button>
+
+
+  <div class="output" id="output"></div>
+
+
+  <script>
+
+    function encode(val) {
+
+      return encodeURIComponent(val.toLowerCase().replace(/[äöüß]/g, c => (
+
+        { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }[c] || c
+
+      )).replace(/\s+/g, '_'));
+
+    }
+
+
+    function generateUTM() {
+
+      const base = document.getElementById('baseUrl').value.trim();
+
+      if (!base) return alert("Base URL is required");
+
+
+      const params = [
+
+        ['utm_source', encode(document.getElementById('utmSource').value)],
+
+        ['utm_medium', encode(document.getElementById('utmMedium').value)],
+
+        ['utm_campaign', encode(document.getElementById('utmCampaign').value)],
+
+      ];
+
+
+      const optional = [
+
+        ['utm_content', 'utmContent'],
+
+        ['utm_term', 'utmTerm'],
+
+        ['utm_id', 'utmId'],
+
+        ['utm_lang', 'utmLang'],
+
+        ['utm_audience', 'utmAudience']
+
+      ];
+
+
+      optional.forEach(([param, id]) => {
+
+        const val = document.getElementById(id).value.trim();
+
+        if (val) params.push([param, encode(val)]);
+
+      });
+
+
+      const queryString = params.map(([k, v]) => `${k}=${v}`).join('&');
+
+      const fullUrl = `${base}?${queryString}`;
+
+      document.getElementById('output').innerText = fullUrl;
+
+    }
+
+  </script>
+
+</body>
+
+</html>
+
+

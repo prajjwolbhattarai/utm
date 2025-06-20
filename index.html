@@ -94,9 +94,7 @@
 
   <div class="output" id="output"></div>
 
-  <!-- Replace the final script block in your existing HTML with this: -->
-
-<script>
+ <script>
   const savedValues = JSON.parse(localStorage.getItem('utm_saved') || '{}');
 
   function encode(val) {
@@ -140,7 +138,7 @@
     }
     if (!savedValues[type]) savedValues[type] = [];
     if (!savedValues[type].includes(val)) {
-      const confirmSave = confirm(`${val} is a new ${type}. Do you want to save it?`);
+      const confirmSave = confirm(`${val} is a new ${type}. Do you want to save it to browser memory for autocomplete?`);
       if (confirmSave) {
         savedValues[type].push(val);
         localStorage.setItem('utm_saved', JSON.stringify(savedValues));
@@ -154,16 +152,16 @@
   }
 
   function sendToGoogleSheet(data) {
-    fetch("https://script.google.com/macros/s/AKfycbyURT1kPCirvWPmOjmg1ObXmdp7I2cjptrr0F_FmyDg6lStVjsY3PgPgwO2K0w8SEUb/exec", {
+    fetch("https://script.google.com/a/macros/investnao.com/s/AKfycbyO2Kb8Tg6Omd4p5PWE-guRDSQe7hMPjVLnl1MTbOmh3uqSSQxCdAzfJ6C1PCcugMSW/exec", {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
         "Content-Type": "application/json"
       }
     }).then(res => {
-      if (res.ok) console.log("Saved to Google Sheet");
-      else console.warn("Failed to save to Sheet");
-    }).catch(err => console.error("Error:", err));
+      if (res.ok) alert("✅ URL registered to Google Sheet");
+      else alert("⚠️ Failed to register URL");
+    }).catch(err => alert("❌ Error: " + err));
   }
 
   function generateUTM() {
@@ -193,10 +191,10 @@
 
     const queryString = params.map(([k, v]) => `${k}=${v}`).join('&');
     const fullUrl = `${base}?${queryString}`;
-    document.getElementById('output').innerText = fullUrl;
+    document.getElementById('output').innerHTML = `✅ Generated URL:<br><code>${fullUrl}</code><br><br><button onclick='confirmRegister()'>📥 Register this URL in Google Sheet</button>`;
 
-    // Send to Google Sheet
-    sendToGoogleSheet({
+    // store latest URL data in a global for reuse
+    window.latestUTMData = {
       base,
       utm_source: utmSource,
       utm_medium: utmMedium,
@@ -207,9 +205,14 @@
       utm_lang: utmLang,
       utm_audience: utmAudience,
       final_url: fullUrl
-    });
+    };
+  }
+
+  function confirmRegister() {
+    if (confirm("Do you want to register this UTM in the spreadsheet?")) {
+      sendToGoogleSheet(window.latestUTMData);
+    }
   }
 </script>
-
 </body>
 </html>

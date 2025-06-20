@@ -94,90 +94,122 @@
 
   <div class="output" id="output"></div>
 
-  <script>
-    const savedValues = JSON.parse(localStorage.getItem('utm_saved') || '{}');
+  <!-- Replace the final script block in your existing HTML with this: -->
 
-    function encode(val) {
-      return encodeURIComponent(val.toLowerCase().replace(/[äöüß]/g, c => (
-        { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }[c] || c
-      )).replace(/\s+/g, '_'));
-    }
+<script>
+  const savedValues = JSON.parse(localStorage.getItem('utm_saved') || '{}');
 
-    function checkSuggestion(input, type) {
-      const val = encode(input.value.trim());
-      const warningEl = document.getElementById(`warn_${type}`);
-      const datalist = document.getElementById(`${type}s`);
-      if (!savedValues[type]) savedValues[type] = [];
-      datalist.innerHTML = '';
-      savedValues[type].forEach(entry => {
-        if (entry.includes(val)) {
-          const option = document.createElement('option');
-          option.value = entry;
-          datalist.appendChild(option);
-        }
-      });
+  function encode(val) {
+    return encodeURIComponent(val.toLowerCase().replace(/[äöüß]/g, c => (
+      { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }[c] || c
+    )).replace(/\s+/g, '_'));
+  }
 
-      if (val && !savedValues[type].includes(val)) {
-        warningEl.innerText = `${val} is new. Click outside to confirm adding.`;
-      } else {
-        warningEl.innerText = '';
+  function checkSuggestion(input, type) {
+    const val = encode(input.value.trim());
+    const warningEl = document.getElementById(`warn_${type}`);
+    const datalist = document.getElementById(`${type}s`);
+    if (!savedValues[type]) savedValues[type] = [];
+    datalist.innerHTML = '';
+    savedValues[type].forEach(entry => {
+      if (entry.includes(val)) {
+        const option = document.createElement('option');
+        option.value = entry;
+        datalist.appendChild(option);
       }
-    }
-
-    ['campaign', 'content', 'term', 'id', 'lang', 'audience'].forEach(type => {
-      const input = document.getElementById(`utm${type.charAt(0).toUpperCase() + type.slice(1)}`);
-      input.addEventListener('blur', () => validateField(input, type));
     });
 
-    function validateField(input, type) {
-      const val = encode(input.value.trim());
-      const warningEl = document.getElementById(`warn_${type}`);
-      if (!val) {
-        warningEl.innerText = '';
-        return;
-      }
-      if (!savedValues[type]) savedValues[type] = [];
-      if (!savedValues[type].includes(val)) {
-        const confirmSave = confirm(`${val} is a new ${type}. Do you want to save it?`);
-        if (confirmSave) {
-          savedValues[type].push(val);
-          localStorage.setItem('utm_saved', JSON.stringify(savedValues));
-          warningEl.innerText = `${val} saved as new ${type}`;
-        } else {
-          warningEl.innerText = `${val} not saved.`;
-        }
+    if (val && !savedValues[type].includes(val)) {
+      warningEl.innerText = `${val} is new. Click outside to confirm adding.`;
+    } else {
+      warningEl.innerText = '';
+    }
+  }
+
+  ['campaign', 'content', 'term', 'id', 'lang', 'audience'].forEach(type => {
+    const input = document.getElementById(`utm${type.charAt(0).toUpperCase() + type.slice(1)}`);
+    input.addEventListener('blur', () => validateField(input, type));
+  });
+
+  function validateField(input, type) {
+    const val = encode(input.value.trim());
+    const warningEl = document.getElementById(`warn_${type}`);
+    if (!val) {
+      warningEl.innerText = '';
+      return;
+    }
+    if (!savedValues[type]) savedValues[type] = [];
+    if (!savedValues[type].includes(val)) {
+      const confirmSave = confirm(`${val} is a new ${type}. Do you want to save it?`);
+      if (confirmSave) {
+        savedValues[type].push(val);
+        localStorage.setItem('utm_saved', JSON.stringify(savedValues));
+        warningEl.innerText = `${val} saved as new ${type}`;
       } else {
-        warningEl.innerText = '';
+        warningEl.innerText = `${val} not saved.`;
       }
+    } else {
+      warningEl.innerText = '';
     }
+  }
 
-    function generateUTM() {
-      const base = document.getElementById('baseUrl').value.trim();
-      if (!base) return alert("Base URL is required");
+  function sendToGoogleSheet(data) {
+    fetch("https://script.google.com/a/macros/investnao.com/s/AKfycbyO2Kb8Tg6Omd4p5PWE-guRDSQe7hMPjVLnl1MTbOmh3uqSSQxCdAzfJ6C1PCcugMSW/exec", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }).then(res => {
+      if (res.ok) console.log("Saved to Google Sheet");
+      else console.warn("Failed to save to Sheet");
+    }).catch(err => console.error("Error:", err));
+  }
 
-      const params = [
-        ['utm_source', encode(document.getElementById('utmSource').value)],
-        ['utm_medium', encode(document.getElementById('utmMedium').value)],
-        ['utm_campaign', encode(document.getElementById('utmCampaign').value)],
-      ];
+  function generateUTM() {
+    const base = document.getElementById('baseUrl').value.trim();
+    if (!base) return alert("Base URL is required");
 
-      const optional = [
-        ['utm_content', 'utmContent'],
-        ['utm_term', 'utmTerm'],
-        ['utm_id', 'utmId'],
-        ['utm_lang', 'utmLang'],
-        ['utm_audience', 'utmAudience']
-      ];
+    const utmSource = encode(document.getElementById('utmSource').value);
+    const utmMedium = encode(document.getElementById('utmMedium').value);
+    const utmCampaign = encode(document.getElementById('utmCampaign').value);
+    const utmContent = encode(document.getElementById('utmContent').value);
+    const utmTerm = encode(document.getElementById('utmTerm').value);
+    const utmId = encode(document.getElementById('utmId').value);
+    const utmLang = encode(document.getElementById('utmLang').value);
+    const utmAudience = encode(document.getElementById('utmAudience').value);
 
-      optional.forEach(([param, id]) => {
-        const val = document.getElementById(id).value.trim();
-        if (val) params.push([param, encode(val)]);
-      });
+    const params = [
+      ['utm_source', utmSource],
+      ['utm_medium', utmMedium],
+      ['utm_campaign', utmCampaign]
+    ];
 
-      const queryString = params.map(([k, v]) => `${k}=${v}`).join('&');
-      const fullUrl = `${base}?${queryString}`;
-      document.getElementById('output').innerText = fullUrl;
-    }
-  </script>
+    if (utmContent) params.push(['utm_content', utmContent]);
+    if (utmTerm) params.push(['utm_term', utmTerm]);
+    if (utmId) params.push(['utm_id', utmId]);
+    if (utmLang) params.push(['utm_lang', utmLang]);
+    if (utmAudience) params.push(['utm_audience', utmAudience]);
+
+    const queryString = params.map(([k, v]) => `${k}=${v}`).join('&');
+    const fullUrl = `${base}?${queryString}`;
+    document.getElementById('output').innerText = fullUrl;
+
+    // Send to Google Sheet
+    sendToGoogleSheet({
+      base,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
+      utm_content: utmContent,
+      utm_term: utmTerm,
+      utm_id: utmId,
+      utm_lang: utmLang,
+      utm_audience: utmAudience,
+      final_url: fullUrl
+    });
+  }
+</script>
+
 </body>
 </html>

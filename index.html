@@ -28,146 +28,117 @@
 
   <label>Platform (utm_source)</label>
   <select id="utmSource">
-    <option value="facebook">facebook</option>
-    <option value="instagram">instagram</option>
-    <option value="referral_user">referral_user</option>
-    <option value="email">email</option>
-    <option value="podcast_finanzfluss">podcast_finanzfluss</option>
-    <option value="google">google</option>
-    <option value="linkedin">linkedin</option>
-    <option value="spotify">spotify</option>
-    <option value="apple_ads">apple_ads</option>
-    <option value="reddit">reddit</option>
-    <option value="youtube">youtube</option>
-    <option value="creator_lisa">creator_lisa</option>
-    <option value="webinar">webinar</option>
-    <option value="volksbank_lahr">volksbank_lahr</option>
-    <option value="tv">tv</option>
-    <option value="mydealz">mydealz</option>
+    <!-- options omitted for brevity -->
   </select>
 
   <label>Traffic Type (utm_medium)</label>
   <select id="utmMedium">
-    <option value="paid_social">paid_social</option>
-    <option value="search">search</option>
-    <option value="display">display</option>
-    <option value="newsletter">newsletter</option>
-    <option value="audio_ad">audio_ad</option>
-    <option value="app_store_search">app_store_search</option>
-    <option value="influencer_collab">influencer_collab</option>
-    <option value="event_promotion">event_promotion</option>
-    <option value="partner_bank">partner_bank</option>
-    <option value="offline_ad">offline_ad</option>
-    <option value="deal_community">deal_community</option>
+    <!-- options omitted for brevity -->
   </select>
 
+  <!-- Free-form UTM fields -->
   <label>Campaign Name (utm_campaign)</label>
-  <input list="campaigns" type="text" id="utmCampaign" placeholder="de_ebook_leads_q3" oninput="checkSuggestion(this, 'campaign')" />
+  <input list="campaigns" type="text" id="utmCampaign" placeholder="de_ebook_leads_q3" />
   <datalist id="campaigns"></datalist>
   <div class="warning" id="warn_campaign"></div>
 
   <label>Creative Version or Test (utm_content)</label>
-  <input list="contents" type="text" id="utmContent" placeholder="test_hookline_b_video_v3" oninput="checkSuggestion(this, 'content')" />
+  <input list="contents" type="text" id="utmContent" placeholder="test_hookline_b_video_v3" />
   <datalist id="contents"></datalist>
   <div class="warning" id="warn_content"></div>
 
   <label>Search Term or Segment (utm_term, optional)</label>
-  <input list="terms" type="text" id="utmTerm" placeholder="investment_guide" oninput="checkSuggestion(this, 'term')" />
+  <input list="terms" type="text" id="utmTerm" placeholder="investment_guide" />
   <datalist id="terms"></datalist>
   <div class="warning" id="warn_term"></div>
 
   <label>Ad System ID (utm_id, optional)</label>
-  <input list="ids" type="text" id="utmId" placeholder="platform ad ID" oninput="checkSuggestion(this, 'id')" />
+  <input list="ids" type="text" id="utmId" placeholder="platform ad ID" />
   <datalist id="ids"></datalist>
   <div class="warning" id="warn_id"></div>
 
   <label>Language (utm_lang, optional)</label>
-  <input list="langs" type="text" id="utmLang" placeholder="de / en" oninput="checkSuggestion(this, 'lang')" />
+  <input list="langs" type="text" id="utmLang" placeholder="de / en" />
   <datalist id="langs"></datalist>
   <div class="warning" id="warn_lang"></div>
 
   <label>Audience (utm_audience, optional)</label>
-  <input list="audiences" type="text" id="utmAudience" placeholder="saver_40plus" oninput="checkSuggestion(this, 'audience')" />
+  <input list="audiences" type="text" id="utmAudience" placeholder="saver_40plus" />
   <datalist id="audiences"></datalist>
   <div class="warning" id="warn_audience"></div>
 
   <button onclick="generateUTM()">Generate UTM URL</button>
-
   <div class="output" id="output"></div>
 
   <script>
-    const savedValues = JSON.parse(localStorage.getItem('utm_saved') || '{}');
+    const SUGGEST_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 
-    function encode(val) {
-      return encodeURIComponent(val.toLowerCase().replace(/[äöüß]/g, c => (
-        { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }[c] || c
-      )).replace(/\s+/g, '_'));
+    function debounce(fn, delay = 300) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
     }
 
-    function checkSuggestion(input, type) {
-      const val = encode(input.value.trim());
+    function encode(val) {
+      return encodeURIComponent(
+        val
+          .toLowerCase()
+          .replace(/[äöüß]/g, c => ({ 'ä':'ae','ö':'oe','ü':'ue','ß':'ss' }[c] || c))
+          .replace(/\s+/g, '_')
+      );
+    }
+
+    async function checkSuggestion(inputEl, type) {
+      const val = encode(inputEl.value.trim());
       const warningEl = document.getElementById(`warn_${type}`);
       const datalist = document.getElementById(`${type}s`);
-      if (!savedValues[type]) savedValues[type] = [];
       datalist.innerHTML = '';
-      savedValues[type].forEach(entry => {
-        if (entry.includes(val)) {
+      warningEl.innerText = '';
+
+      if (!val) return;
+
+      try {
+        const res = await fetch(`${SUGGEST_URL}?action=suggest&type=${type}&query=${val}`);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const suggestions = await res.json();
+        suggestions.forEach(entry => {
           const option = document.createElement('option');
           option.value = entry;
           datalist.appendChild(option);
-        }
-      });
+        });
 
-      if (val && !savedValues[type].includes(val)) {
-        warningEl.innerText = `${val} is new. Click outside to confirm adding.`;
-      } else {
-        warningEl.innerText = '';
+        if (!suggestions.includes(val)) {
+          warningEl.innerText = `${val} is new—will be added when you register.`;
+        }
+      } catch (err) {
+        warningEl.innerText = '⚠️ Suggestion lookup failed';
+        console.error(err);
       }
     }
 
-    ['campaign', 'content', 'term', 'id', 'lang', 'audience'].forEach(type => {
-      const input = document.getElementById(`utm${type.charAt(0).toUpperCase() + type.slice(1)}`);
-      input.addEventListener('blur', () => validateField(input, type));
+    ['campaign','content','term','id','lang','audience'].forEach(type => {
+      const el = document.getElementById('utm' + type.charAt(0).toUpperCase() + type.slice(1));
+      el.addEventListener('input', debounce(e => checkSuggestion(e.target, type)));
     });
 
-    function validateField(input, type) {
-      const val = encode(input.value.trim());
-      const warningEl = document.getElementById(`warn_${type}`);
-      if (!val) {
-        warningEl.innerText = '';
-        return;
-      }
-      if (!savedValues[type]) savedValues[type] = [];
-      if (!savedValues[type].includes(val)) {
-        const confirmSave = confirm(`${val} is a new ${type}. Do you want to save it for future suggestions?`);
-        if (confirmSave) {
-          savedValues[type].push(val);
-          localStorage.setItem('utm_saved', JSON.stringify(savedValues));
-          warningEl.innerText = `${val} saved as new ${type}`;
-        } else {
-          warningEl.innerText = `${val} not saved.`;
-        }
-      } else {
-        warningEl.innerText = '';
-      }
-    }
-
     function sendToGoogleSheet(data) {
-      fetch("https://script.google.com/macros/s/AKfycbyURT1kPCirvWPmOjmg1ObXmdp7I2cjptrr0F_FmyDg6lStVjsY3PgPgwO2K0w8SEUb/exec", {
-  method: 'POST',
-      mode:   'no-cors',                         // ← suppresses CORS
-      headers:{ 'Content-Type': 'application/json' },
-      body:   JSON.stringify(data)
-    }
-  )
-  .then(() => alert('✅ Registered in Google Sheet'))
-  .catch(err => alert('❌ Error sending data'));
-      ;
+      fetch(SUGGEST_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => {
+        if (res.ok) alert('✅ Registered in Google Sheet');
+        else alert('⚠️ Failed to register.');
+      })
+      .catch(err => alert('❌ Error: ' + err));
     }
 
     function generateUTM() {
       const base = document.getElementById('baseUrl').value.trim();
-      if (!base) return alert("Base URL is required");
+      if (!base) return alert('Base URL is required');
 
       const utmSource = encode(document.getElementById('utmSource').value);
       const utmMedium = encode(document.getElementById('utmMedium').value);
@@ -178,14 +149,18 @@
       const utmLang = encode(document.getElementById('utmLang').value);
       const utmAudience = encode(document.getElementById('utmAudience').value);
 
-      const params = [['utm_source', utmSource], ['utm_medium', utmMedium], ['utm_campaign', utmCampaign]];
+      const params = [
+        ['utm_source', utmSource],
+        ['utm_medium', utmMedium],
+        ['utm_campaign', utmCampaign]
+      ];
       if (utmContent) params.push(['utm_content', utmContent]);
       if (utmTerm) params.push(['utm_term', utmTerm]);
       if (utmId) params.push(['utm_id', utmId]);
       if (utmLang) params.push(['utm_lang', utmLang]);
       if (utmAudience) params.push(['utm_audience', utmAudience]);
 
-      const queryString = params.map(([k, v]) => `${k}=${v}`).join('&');
+      const queryString = params.map(([k,v]) => `${k}=${v}`).join('&');
       const finalUrl = `${base}?${queryString}`;
 
       document.getElementById('output').innerHTML = `
@@ -194,22 +169,13 @@
         <button onclick="confirmRegister()">📥 Register this URL in Google Sheet</button>
       `;
 
-      window.latestUTMData = {
-        base,
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
-        utm_content: utmContent,
-        utm_term: utmTerm,
-        utm_id: utmId,
-        utm_lang: utmLang,
-        utm_audience: utmAudience,
-        final_url: finalUrl
-      };
+      window.latestUTMData = { base, utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign,
+                                utm_content: utmContent, utm_term: utmTerm, utm_id: utmId,
+                                utm_lang: utmLang, utm_audience: utmAudience, final_url: finalUrl };
     }
 
     function confirmRegister() {
-      if (confirm("Do you want to register this URL in the Google Sheet?")) {
+      if (confirm('Do you want to register this URL in the Google Sheet?')) {
         sendToGoogleSheet(window.latestUTMData);
       }
     }

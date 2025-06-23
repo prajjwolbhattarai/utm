@@ -154,15 +154,15 @@
 
     function sendToGoogleSheet(data) {
       fetch("https://script.google.com/macros/s/AKfycbyURT1kPCirvWPmOjmg1ObXmdp7I2cjptrr0F_FmyDg6lStVjsY3PgPgwO2K0w8SEUb/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      }).then(res => {
-        if (res.ok) alert("✅ Registered in Google Sheet");
-        else alert("⚠️ Failed to register. Check script permissions or deployment.");
-      }).catch(err => {
-        alert("❌ Error: " + err);
-      });
+  method: 'POST',
+      mode:   'no-cors',                         // ← suppresses CORS
+      headers:{ 'Content-Type': 'application/json' },
+      body:   JSON.stringify(data)
+    }
+  )
+  .then(() => alert('✅ Registered in Google Sheet'))
+  .catch(err => alert('❌ Error sending data'));
+      ;
     }
 
     function generateUTM() {
